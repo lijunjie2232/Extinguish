@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.androidApplication)
-    alias(libs.plugins.kotlinAndroid)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.ksp)
     id(libs.plugins.parcelize.get().pluginId)
@@ -8,7 +7,7 @@ plugins {
 
 android {
     namespace = "own.moderpach.extinguish"
-    compileSdk = 34
+    compileSdk = 37
 
     buildFeatures {
         buildConfig = true
@@ -18,8 +17,8 @@ android {
         applicationId = "own.moderpach.extinguish"
         minSdk = 26
         targetSdk = 35
-        versionCode = 35
-        versionName = "0.9.5.1"
+        versionCode = 36
+        versionName = "0.9.5.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         vectorDrawables {
@@ -56,9 +55,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     buildFeatures {
         compose = true
     }
@@ -74,6 +70,12 @@ android {
     packaging {
         resources.excludes += "/META-INF/AL2.0"
         resources.excludes += "/META-INF/LGPL2.1"
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
