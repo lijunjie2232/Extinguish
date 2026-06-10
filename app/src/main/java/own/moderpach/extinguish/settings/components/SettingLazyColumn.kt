@@ -26,13 +26,13 @@ fun SettingLazyColumn(
     userScrollEnabled: Boolean = true,
     content: LazyListScope.() -> Unit
 ) = LazyColumn(
-    modifier.fillMaxSize(),
-    state,
-    contentPadding.add(horizontal = 12.dp).add(bottom = 16.dp),
-    false,
-    verticalArrangement,
-    horizontalAlignment,
-    flingBehavior,
-    userScrollEnabled,
-    content
+    modifier = modifier.fillMaxSize(),
+    state = state,
+    contentPadding = contentPadding.add(horizontal = 12.dp).add(bottom = 16.dp),
+    reverseLayout = false,
+    verticalArrangement = verticalArrangement,
+    horizontalAlignment = horizontalAlignment,
+    flingBehavior = flingBehavior,
+    userScrollEnabled = userScrollEnabled,
+    content = content
 )
