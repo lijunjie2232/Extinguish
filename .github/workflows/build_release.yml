@@ -33,7 +33,7 @@ jobs:
       - name: Setup android cmdline tools
         run: |
           sudo apt-get install -y curl unzip
-          curl https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o commandline-tools.zip
+          curl https://dl.google.com/android/repository/commandlinetools-linux-15641748_latest.zip -o commandline-tools.zip
           unzip commandline-tools.zip
           mkdir .android
           mkdir .android/sdk
@@ -44,8 +44,8 @@ jobs:
       - name: Setup android build tools
         run: |
           yes | $CMDLINE_TOOLS/sdkmanager --licenses --sdk_root=$ANDROID_SDK
-          $CMDLINE_TOOLS/sdkmanager --install "build-tools;35.0.0" --sdk_root=$ANDROID_SDK
-          echo "BUILD_TOOLS=$ANDROID_SDK/build-tools/35.0.0" >> "$GITHUB_ENV"
+          $CMDLINE_TOOLS/sdkmanager --install "build-tools;37.0.0" --sdk_root=$ANDROID_SDK
+          echo "BUILD_TOOLS=$ANDROID_SDK/build-tools/37.0.0" >> "$GITHUB_ENV"
 
       - name: Build unsigned apk and app bundle
         run: |
