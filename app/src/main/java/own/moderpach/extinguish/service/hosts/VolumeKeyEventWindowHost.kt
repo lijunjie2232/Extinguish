@@ -11,6 +11,7 @@ import android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
 import android.view.WindowManager.LayoutParams.FLAG_SPLIT_TOUCH
 import androidx.core.view.isVisible
 import androidx.lifecycle.LifecycleOwner
+import own.moderpach.extinguish.BuildConfig
 import own.moderpach.extinguish.util.ext.addFlags
 
 private const val TAG = "VolumeKeyEventWindowHost"
@@ -37,7 +38,9 @@ class VolumeKeyEventWindowHost(
         val isVolumeKeyCode = keyCode == KeyEvent.KEYCODE_VOLUME_UP ||
                 keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
         if (isVolumeKeyCode && event.action == KeyEvent.ACTION_UP) {
-            Log.d(TAG, "get key event $keyCode")
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "get key event $keyCode")
+            }
             onKeyEvent()
             return@OnKeyListener false
         }

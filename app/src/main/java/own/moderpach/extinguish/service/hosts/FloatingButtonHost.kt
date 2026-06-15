@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import own.moderpach.extinguish.BuildConfig
 import own.moderpach.extinguish.service.hosts.windows.FloatingButtonWindow
 import own.moderpach.extinguish.service.hosts.windows.FloatingButtonWindow.Action
 import own.moderpach.extinguish.service.hosts.windows.TimerSetterPopupWindow
@@ -48,7 +49,9 @@ class FloatingButtonHost<T>(
     fun create() {
         if (floatingButtonWindow != null) return
         floatingButtonWindow = FloatingButtonWindow(owner, isScreenOn) { action ->
-            Log.d(TAG, "FloatingButtonWindow | onAction: $action")
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "FloatingButtonWindow | onAction: $action")
+            }
             when (action) {
                 FloatingButtonWindow.Action.ShowTimerSetterDialog -> {
                     if (timerSetterPopupWindow == null) {
