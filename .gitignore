@@ -16,3 +16,7 @@
 .cxx
 *.trace
 local.properties
+.trae
+.lingma
+.claude
+.kilo*
