@@ -26,7 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
@@ -43,6 +43,10 @@ import own.moderpach.extinguish.service.hosts.FloatingButtonHost
 import own.moderpach.extinguish.service.hosts.NotificationHost
 import own.moderpach.extinguish.service.hosts.ScreenEventHost
 import own.moderpach.extinguish.service.hosts.VolumeKeyEventShizukuHost
+import own.moderpach.extinguish.service.hosts.EVENT_POWER_KEY
+import own.moderpach.extinguish.service.hosts.EVENT_TYPE_INPUT
+import own.moderpach.extinguish.service.hosts.EVENT_VOLUME_DOWN
+import own.moderpach.extinguish.service.hosts.EVENT_VOLUME_UP
 import own.moderpach.extinguish.service.hosts.VolumeKeyEventWindowHost
 import own.moderpach.extinguish.settings.data.ISettingsRepository
 import own.moderpach.extinguish.settings.data.SettingsTokens
@@ -103,8 +107,6 @@ class ExtinguishService : LifecycleService() {
     var screenEventHost: ScreenEventHost? = null
     val notificationHost by lazy { NotificationHost(this) }
 
-    private val updateHostStateMutex = Mutex()
-
     /**
      * should be invoked in main thread.
      * */
@@ -112,7 +114,7 @@ class ExtinguishService : LifecycleService() {
         requestScreenOn: Boolean,
         feature: Feature
     ) {
-        updateHostStateMutex.withLock {
+        screenControlMutex.withLock {
             if (requestScreenOn) awakeHost?.stopKeepAwake()
             else awakeHost?.startKeepAwake()
 
@@ -364,10 +366,6 @@ class ExtinguishService : LifecycleService() {
                 )
             )
 
-            if (shouldBindEventsProviderService) {
-                bindEventsProviderService()
-            }
-
             if (
                 feature.enabledVolumeKeyEventControl.and(
                     feature.volumeKeyEventControlMethod == Window
@@ -395,16 +393,12 @@ class ExtinguishService : LifecycleService() {
                 }
             }
 
-            bindDisplayControlService()
-
             withTimeout(8000) {
                 try {
-                    while (
-                        displayControlService == null ||
-                        (shouldBindEventsProviderService && eventsProviderService == null)
-                    ) {
-                        delay(50)
+                    if (shouldBindEventsProviderService) {
+                        bindEventsProviderServiceSuspend()
                     }
+                    bindDisplayControlServiceSuspend()
                 } finally {
                     if (isActive) {
                         awakeHost?.create()
@@ -447,7 +441,7 @@ class ExtinguishService : LifecycleService() {
                                 }
                             }
 
-                            service.launch("-F -e \": 0001 014a\" -e \": 0001 0072\" -e \": 0001 0073\"")
+                            service.launch("-F -e \": $EVENT_TYPE_INPUT $EVENT_POWER_KEY\" -e \": $EVENT_TYPE_INPUT $EVENT_VOLUME_DOWN\" -e \": $EVENT_TYPE_INPUT $EVENT_VOLUME_UP\"")
                         }
 
                         registerSystemLockReceiver()
@@ -498,29 +492,33 @@ class ExtinguishService : LifecycleService() {
 
     override fun onDestroy() {
         Log.d(TAG, "onDestroy: ")
-        runBlocking {
-            if (state.value == State.Prepared && screenState.value == ScreenState.Off) {
+
+        // Fire-and-forget: turn screen on if needed (suspend function)
+        if (state.value == State.Prepared && screenState.value == ScreenState.Off) {
+            lifecycleScope.launch {
                 turnScreenOn()
             }
-            unregisterSystemLockReceiver()
-            awakeHost?.destroy()
-            floatingButtonHost?.destroy()
-            volumeKeyEventWindowHost?.destroy()
-            volumeKeyEventShizukuHost?.unregister()
-            screenEventHost?.unregister()
-
-            eventsProviderService?.let {
-                it.stop()
-                unbindEventsProviderService()
-            }
-
-            displayControlService?.let {
-                unbindDisplayControlService()
-            }
-
-            super.onDestroy()
-            state.update { State.Destroyed }
         }
+
+        // Synchronous cleanup
+        unregisterSystemLockReceiver()
+        awakeHost?.destroy()
+        floatingButtonHost?.destroy()
+        volumeKeyEventWindowHost?.destroy()
+        volumeKeyEventShizukuHost?.unregister()
+        screenEventHost?.unregister()
+
+        eventsProviderService?.let {
+            it.stop()
+            unbindEventsProviderService()
+        }
+
+        displayControlService?.let {
+            unbindDisplayControlService()
+        }
+
+        super.onDestroy()
+        state.update { State.Destroyed }
     }
 
     //== Feature
@@ -586,16 +584,22 @@ class ExtinguishService : LifecycleService() {
         .version(BuildConfig.VERSION_CODE)
         .daemon(false)
 
+    private var displayControlContinuation: kotlinx.coroutines.CancellableContinuation<IDisplayControl?>? = null
+
     private val displayControlServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             if (service != null && Shizuku.pingBinder()) {
-                displayControlService = IDisplayControl.Stub.asInterface(service)
+                val result = IDisplayControl.Stub.asInterface(service)
+                displayControlService = result
+                displayControlContinuation?.resumeWith(Result.success(result))
             } else {
                 notifyException(
                     ExceptionScenes.ExceptionWhenAccessShizukuRemote,
                     "get a null DisplayControlService connect or binder dead"
                 )
+                displayControlContinuation?.resumeWith(Result.success(null))
             }
+            displayControlContinuation = null
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -613,6 +617,11 @@ class ExtinguishService : LifecycleService() {
         } catch (e: Exception) {
             notifyException(ExceptionScenes.ExceptionWhenAccessShizukuRemote, e)
         }
+    }
+
+    suspend fun bindDisplayControlServiceSuspend(): IDisplayControl? = suspendCancellableCoroutine { cont ->
+        displayControlContinuation = cont
+        bindDisplayControlService()
     }
 
     fun unbindDisplayControlService() {
@@ -641,16 +650,22 @@ class ExtinguishService : LifecycleService() {
         .version(BuildConfig.VERSION_CODE)
         .daemon(false)
 
+    private var eventsProviderContinuation: kotlinx.coroutines.CancellableContinuation<IEventsProvider?>? = null
+
     private val eventsProviderServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             if (service != null && Shizuku.pingBinder()) {
-                eventsProviderService = IEventsProvider.Stub.asInterface(service)
+                val result = IEventsProvider.Stub.asInterface(service)
+                eventsProviderService = result
+                eventsProviderContinuation?.resumeWith(Result.success(result))
             } else {
                 notifyException(
                     ExceptionScenes.ExceptionWhenAccessShizukuRemote,
                     "get a null DisplayControlService connect or binder dead"
                 )
+                eventsProviderContinuation?.resumeWith(Result.success(null))
             }
+            eventsProviderContinuation = null
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -668,6 +683,11 @@ class ExtinguishService : LifecycleService() {
         } catch (e: Exception) {
             notifyException(ExceptionScenes.ExceptionWhenAccessShizukuRemote, e)
         }
+    }
+
+    suspend fun bindEventsProviderServiceSuspend(): IEventsProvider? = suspendCancellableCoroutine { cont ->
+        eventsProviderContinuation = cont
+        bindEventsProviderService()
     }
 
     fun unbindEventsProviderService() {
