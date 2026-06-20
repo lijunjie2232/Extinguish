@@ -139,6 +139,9 @@ dependencies {
     implementation(libs.shizuku.api)
     implementation(libs.shizuku.provider)
 
+    // lsposed module api (provided by LSPosed framework at runtime in hooked apps)
+    compileOnly("io.github.libxposed:api:102.0.0")
+
     //test
     testImplementation(libs.junit)
     testImplementation(libs.test.core)
