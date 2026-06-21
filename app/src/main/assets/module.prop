@@ -1,0 +1,7 @@
+id=extinguish
+name=Extinguish
+version=0.9.5.2
+versionCode=36
+author=Extinguish
+description=Keep video/music audio playing after screen off by halting render. Loaded only into user-selected target apps.
+scope=
