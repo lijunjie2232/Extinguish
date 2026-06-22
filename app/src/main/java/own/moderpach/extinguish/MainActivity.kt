@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.CompositionLocalProvider
+import own.moderpach.extinguish.lsposed.LsposedConfigController
 import own.moderpach.extinguish.settings.data.ISettingsRepository
 import own.moderpach.extinguish.settings.data.settingsDataStore
 import own.moderpach.extinguish.settings.data.settingsRepository
@@ -23,6 +24,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var systemPermissionsManager: ISystemPermissionsManager
     private lateinit var settingsRepository: ISettingsRepository
     private lateinit var timersRepository: ITimersRepository
+    private lateinit var lsposedConfigController: LsposedConfigController
 
     @ExperimentalMaterial3Api
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,6 +37,7 @@ class MainActivity : ComponentActivity() {
         }
         systemPermissionsManager = SystemPermissionsManager(this)
         settingsRepository = settingsRepository(settingsDataStore)
+        lsposedConfigController = LsposedConfigController(this, settingsDataStore, this)
         timersRepository = timersRepository(TimersDatabase.get(this).timersDao())
 
         setContent {
