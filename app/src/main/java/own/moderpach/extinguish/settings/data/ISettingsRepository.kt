@@ -4,6 +4,7 @@ interface ISettingsRepository {
 
     var initVersion: Int
     var solution: SettingsTokens.SolutionValue
+    var lsposedTargetPackages: Set<String>
     var keepWakeWhileScreenOff: Boolean
 
     interface FloatingButton {

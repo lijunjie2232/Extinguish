@@ -5,10 +5,12 @@ object SettingsTokens {
 
     enum class SolutionValue {
         ShizukuPowerOffScreen,
-        ShizukuScreenBrightnessNeg1
+        ShizukuScreenBrightnessNeg1,
+        LsposedNative
     }
 
     val Solution = stringSettingElement("Solution", SolutionValue.ShizukuPowerOffScreen.name)
+    val LsposedTargetPackages = stringSetSettingElement("Lsposed/TargetPackages", emptySet())
 
     val AgreedPolicyVersion = intSettingElement("AgreedPolicyVersion", 0)
     val KeepWakeWhileScreenOff = booleanSettingElement("KeepWakeWhileScreenOff", true)

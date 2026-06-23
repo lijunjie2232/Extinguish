@@ -18,6 +18,7 @@ class SyncSettingsRepository(
         set(value) {
             _solution = value.name
         }
+    override var lsposedTargetPackages by Delegate(SettingsTokens.LsposedTargetPackages)
     override var keepWakeWhileScreenOff by Delegate(SettingsTokens.KeepWakeWhileScreenOff)
 
     override val floatingButton = object : ISettingsRepository.FloatingButton {

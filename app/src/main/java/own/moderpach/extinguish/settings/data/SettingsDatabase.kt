@@ -13,6 +13,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -35,6 +36,9 @@ fun floatSettingElement(name: String, default: Float) =
 
 fun booleanSettingElement(name: String, default: Boolean) =
     SettingElement(booleanPreferencesKey(name), default)
+
+fun stringSetSettingElement(name: String, default: Set<String>) =
+    SettingElement(stringSetPreferencesKey(name), default)
 
 data class SettingElement<T>(
     val key: Preferences.Key<T>,

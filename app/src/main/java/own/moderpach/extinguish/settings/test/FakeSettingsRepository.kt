@@ -10,6 +10,7 @@ import own.moderpach.extinguish.settings.data.SettingsTokens
 class FakeSettingsRepository : ISettingsRepository {
     override var initVersion by mutableStateOf(0)
     override var solution by mutableStateOf(SettingsTokens.SolutionValue.ShizukuPowerOffScreen)
+    override var lsposedTargetPackages by mutableStateOf(emptySet<String>())
     override var keepWakeWhileScreenOff by mutableStateOf(false)
 
     override val floatingButton = object : ISettingsRepository.FloatingButton {
