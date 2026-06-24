@@ -101,6 +101,18 @@ fun SolutionScreen(
                     }
                 )
             }
+            item {
+                RadioCard(
+                    modifier = Modifier.selectableGroup(),
+                    selected = settingsRepository.solution == SettingsTokens.SolutionValue.LsposedNative,
+                    headline = stringResource(R.string.str_LsposedNative),
+                    supporting = stringResource(R.string.str_LsposedNative_supporting),
+                    onClick = {
+                        settingsRepository.solution =
+                            SettingsTokens.SolutionValue.LsposedNative
+                    }
+                )
+            }
         }
 
     }

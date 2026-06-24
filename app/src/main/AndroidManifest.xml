@@ -4,6 +4,8 @@
 
     <queries>
         <package android:name="moe.shizuku.privileged.api" />
+        <package android:name="org.lsposed.manager" />
+        <package android:name="io.github.libxposed.manager" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:mimeType="text/html" />

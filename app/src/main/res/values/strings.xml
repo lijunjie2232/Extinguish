@@ -59,6 +59,7 @@
     <string name="str_Lsposed_not_activated">Not activated (no target app running)</string>
     <string name="str_Lsposed_target_count">%d application(s) selected</string>
     <string name="str_Select_applications">Select applications</string>
+    <string name="str_Lsposed_screen_off_hint">Press the physical power button to turn off the screen; target apps will keep playing.</string>
     <string name="str_Sort_by">Sort by</string>
     <string name="str_Sort_name">Name</string>
     <string name="str_Sort_first_install">First install time</string>
