@@ -29,6 +29,7 @@ import own.moderpach.extinguish.settings.data.settingsDataStore
 import own.moderpach.extinguish.settings.externalControl
 import own.moderpach.extinguish.settings.floatingButton
 import own.moderpach.extinguish.settings.solution
+import own.moderpach.extinguish.settings.targetAppSelector
 import own.moderpach.extinguish.settings.volumeKeyControl
 import own.moderpach.extinguish.timer.data.ITimersRepository
 import own.moderpach.extinguish.timer.timerPreset
@@ -121,6 +122,11 @@ fun ExtinguishApp(
             onNavigateTo
         )
         about(
+            onBack,
+            settingsRepository,
+            onNavigateTo
+        )
+        targetAppSelector(
             onBack,
             settingsRepository,
             onNavigateTo
