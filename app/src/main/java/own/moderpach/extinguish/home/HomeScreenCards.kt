@@ -6,6 +6,8 @@ import own.moderpach.extinguish.home.cards.externalControl
 import own.moderpach.extinguish.home.cards.externalControlCard
 import own.moderpach.extinguish.home.cards.floatingButton
 import own.moderpach.extinguish.home.cards.floatingButtonCard
+import own.moderpach.extinguish.home.cards.lsposedConfig
+import own.moderpach.extinguish.home.cards.lsposedConfigCard
 import own.moderpach.extinguish.home.cards.moreSettings
 import own.moderpach.extinguish.home.cards.moreSettingsCard
 import own.moderpach.extinguish.home.cards.notificationControl
@@ -35,6 +37,11 @@ fun LazyStaggeredGridScope.homeScreenCards(
                 settingsRepository,
                 onNavigateTo,
                 onRequestService
+            )
+
+            HomeScreenCardKeys.lsposedConfig -> lsposedConfigCard(
+                settingsRepository,
+                onNavigateTo
             )
 
             HomeScreenCardKeys.floatingButton -> floatingButtonCard(

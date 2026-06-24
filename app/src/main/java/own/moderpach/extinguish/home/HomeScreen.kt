@@ -72,6 +72,7 @@ import own.moderpach.extinguish.R
 import own.moderpach.extinguish.SpecificPermission
 import own.moderpach.extinguish.home.cards.externalControl
 import own.moderpach.extinguish.home.cards.floatingButton
+import own.moderpach.extinguish.home.cards.lsposedConfig
 import own.moderpach.extinguish.home.cards.moreSettings
 import own.moderpach.extinguish.home.cards.notificationControl
 import own.moderpach.extinguish.home.cards.screenEventControl
@@ -80,6 +81,7 @@ import own.moderpach.extinguish.home.cards.tileControl
 import own.moderpach.extinguish.home.cards.volumeKeyControl
 import own.moderpach.extinguish.service.ExtinguishService
 import own.moderpach.extinguish.settings.data.ISettingsRepository
+import own.moderpach.extinguish.settings.data.SettingsTokens
 import own.moderpach.extinguish.settings.test.FakeSettingsRepository
 import own.moderpach.extinguish.ui.components.ExtinguishTopAppBar
 import own.moderpach.extinguish.ui.navigation.extinguishComposable
@@ -115,6 +117,25 @@ fun NavGraphBuilder.home(
     ) {
         when (ExtinguishService.state.value) {
             ExtinguishService.State.Destroyed -> {
+                // ponytail: LSPosed mode needs no Shizuku binder; the module intercepts
+                // player queries inside target apps. Only the overlay (for floating button)
+                // and notification (for the service foreground notification) gates apply.
+                if (settingsRepository.solution == SettingsTokens.SolutionValue.LsposedNative) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        systemPermissionsManager.request(
+                            Permission.PostNotification,
+                            {},
+                            permissionRequestLauncher,
+                            context
+                        )
+                    }
+                    if (
+                        settingsRepository.floatingButton.enabled &&
+                        !systemPermissionsManager.checkSpecial(SpecificPermission.CanDrawOverlays)
+                    ) return@HomeScreen
+                    context.startService(Intent(context, ExtinguishService::class.java))
+                    return@HomeScreen
+                }
                 solutionsDependencyManager.requestShizukuPermission { }
                 systemPermissionsManager.requestSpecial(SpecificPermission.CanDrawOverlays)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -164,16 +185,19 @@ fun HomeScreen(
     val gridState = rememberLazyStaggeredGridState()
     val coroutineScope = rememberCoroutineScope()
 
-    val cardList = listOf(
-        HomeScreenCardKeys.solution,
-        HomeScreenCardKeys.floatingButton,
-        HomeScreenCardKeys.volumeKeyControl,
-        HomeScreenCardKeys.screenEventControl,
-        HomeScreenCardKeys.notificationControl,
-        HomeScreenCardKeys.tileControl,
-        HomeScreenCardKeys.externalControl,
-        HomeScreenCardKeys.moreSettings,
-    )
+    val cardList = buildList {
+        add(HomeScreenCardKeys.solution)
+        if (settingsRepository.solution == SettingsTokens.SolutionValue.LsposedNative) {
+            add(HomeScreenCardKeys.lsposedConfig)
+        }
+        add(HomeScreenCardKeys.floatingButton)
+        add(HomeScreenCardKeys.volumeKeyControl)
+        add(HomeScreenCardKeys.screenEventControl)
+        add(HomeScreenCardKeys.notificationControl)
+        add(HomeScreenCardKeys.tileControl)
+        add(HomeScreenCardKeys.externalControl)
+        add(HomeScreenCardKeys.moreSettings)
+    }
 
     val fabHeight = if (largerFAB) (96 + 16).dp else (56 + 16).dp
 

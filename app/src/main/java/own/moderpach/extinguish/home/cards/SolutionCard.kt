@@ -96,6 +96,7 @@ fun SolutionCard(
         val solutionText = when (settingsRepository.solution) {
             SettingsTokens.SolutionValue.ShizukuPowerOffScreen -> stringResource(R.string.str_ShizukuPowerOffScreen)
             SettingsTokens.SolutionValue.ShizukuScreenBrightnessNeg1 -> stringResource(R.string.str_ShizukuScreenBrightnessNeg1)
+            SettingsTokens.SolutionValue.LsposedNative -> stringResource(R.string.str_LsposedNative)
         }
         Text(
             stringResource(R.string.Current_solution),
