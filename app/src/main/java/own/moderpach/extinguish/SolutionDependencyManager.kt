@@ -7,6 +7,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import rikka.shizuku.Shizuku
+import own.moderpach.extinguish.lsposed.LSPSED_CONFIG_FILENAME
+import own.moderpach.extinguish.lsposed.LsposedConfigContentProvider
+import own.moderpach.extinguish.lsposed.parseFromInputStream
+import java.io.File
+import java.io.FileInputStream
 
 class SolutionDependencyManager(
     private val context: Context
@@ -47,9 +52,33 @@ class SolutionDependencyManager(
                     Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
                 )
             }.getOrElse { false }
+            val lsposedConfiguredTargetCount = runCatching {
+                FileInputStream(File(context.filesDir, LSPSED_CONFIG_FILENAME)).use { fis ->
+                    parseFromInputStream(fis)?.targetPackages?.size ?: 0
+                }
+            }.getOrNull() ?: 0
+            val isLsposedActivated = runCatching {
+                val now = System.currentTimeMillis()
+                var fresh = false
+                context.contentResolver.query(
+                    LsposedConfigContentProvider.HEARTBEAT_URI, null, null, null, null
+                )?.use { c ->
+                    val tsIdx = c.getColumnIndex(LsposedConfigContentProvider.COL_TIMESTAMP)
+                    while (c.moveToNext()) {
+                        val ts = if (tsIdx >= 0) c.getLong(tsIdx) else 0L
+                        if (now - ts < LsposedConfigContentProvider.STALE_MS) {
+                            fresh = true
+                            break
+                        }
+                    }
+                }
+                fresh
+            }.getOrNull() ?: false
             SolutionDependencyState(
                 isShizukuBinderAlive = isShizukuBinderAlive,
-                isShizukuPermissionGranted = isShizukuPermissionGranted
+                isShizukuPermissionGranted = isShizukuPermissionGranted,
+                isLsposedActivated = isLsposedActivated,
+                lsposedConfiguredTargetCount = lsposedConfiguredTargetCount
             )
         }
     }
@@ -85,5 +114,7 @@ class SolutionDependencyManager(
 
 data class SolutionDependencyState(
     val isShizukuBinderAlive: Boolean = false,
-    val isShizukuPermissionGranted: Boolean = false
+    val isShizukuPermissionGranted: Boolean = false,
+    val isLsposedActivated: Boolean = false,
+    val lsposedConfiguredTargetCount: Int = 0
 )
