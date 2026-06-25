@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import extinguish.shizuku_service.DisplayControlService
@@ -32,6 +33,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import own.moderpach.extinguish.BuildConfig
 import own.moderpach.extinguish.ExceptionScenes
+import own.moderpach.extinguish.R
 import own.moderpach.extinguish.ISolutionDependencyManager
 import own.moderpach.extinguish.ISystemPermissionsManager
 import own.moderpach.extinguish.SolutionDependencyManager
@@ -50,6 +52,7 @@ import own.moderpach.extinguish.service.hosts.EVENT_VOLUME_UP
 import own.moderpach.extinguish.service.hosts.VolumeKeyEventWindowHost
 import own.moderpach.extinguish.settings.data.ISettingsRepository
 import own.moderpach.extinguish.settings.data.SettingsTokens
+import own.moderpach.extinguish.settings.data.SettingsTokens.SolutionValue.LsposedNative
 import own.moderpach.extinguish.settings.data.SettingsTokens.SolutionValue.ShizukuPowerOffScreen
 import own.moderpach.extinguish.settings.data.SettingsTokens.SolutionValue.ShizukuScreenBrightnessNeg1
 import own.moderpach.extinguish.settings.data.SettingsTokens.VolumeKeyEvent.ListeningMethodValue.Shell
@@ -715,6 +718,10 @@ class ExtinguishService : LifecycleService() {
     suspend fun turnScreenOn() {
         screenControlMutex.withLock {
             screenState.update { ScreenState.On }
+            // ponytail: LsposedNative has no displayControlService work — the physical power
+            // button drives screen state; the module intercepts player queries. Early return
+            // skips the shizuku-bound brightness restore path that doesn't apply.
+            if (feature.solution == LsposedNative) return@withLock
             try {
                 when (feature.solution) {
                     ShizukuPowerOffScreen -> {
@@ -740,6 +747,10 @@ class ExtinguishService : LifecycleService() {
                             )
                         }
                     }
+
+                    // ponytail: dead branch — early-return above prevents reaching here.
+                    // Present only to keep the `when` exhaustive over the sealed enum.
+                    LsposedNative -> Unit
                 }
             } catch (e: Exception) {
                 notifyException(ExceptionScenes.ExceptionWhenAccessShizukuRemote, e)
@@ -767,6 +778,16 @@ class ExtinguishService : LifecycleService() {
     suspend fun turnScreenOff() {
         screenControlMutex.withLock {
             screenState.update { ScreenState.Off }
+            // ponytail: no-op screen control in LSPosed mode; physical power button is
+            // expected to drive the actual panel state. Toast reminds the user.
+            if (feature.solution == LsposedNative) {
+                Toast.makeText(
+                    this@ExtinguishService,
+                    R.string.str_Lsposed_screen_off_hint,
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@withLock
+            }
             recordBrightness = try {
                 Settings.System.getInt(
                     contentResolver,
@@ -817,6 +838,10 @@ class ExtinguishService : LifecycleService() {
                             )
                         }
                     }
+
+                    // ponytail: dead branch — early-return above prevents reaching here.
+                    // Present only to keep the `when` exhaustive over the sealed enum.
+                    LsposedNative -> Unit
                 }
             } catch (e: Exception) {
                 notifyException(ExceptionScenes.ExceptionWhenAccessShizukuRemote, e)
